@@ -113,6 +113,20 @@ export const profileAPI = {
     });
     return handleResponse(res);
   },
+  create: async (data, token) => {
+    const res = await fetch(`${API_URL}/profiles`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+      body: JSON.stringify(data),
+    });
+    return handleResponse(res);
+  },
+  getRecentlyViewed: async (token) => {
+    const res = await fetch(`${API_URL}/profiles/me/recently-viewed`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    return handleResponse(res);
+  },
 };
 
 export const bookingAPI = {

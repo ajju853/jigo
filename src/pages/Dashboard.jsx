@@ -61,6 +61,26 @@ export const Dashboard = () => {
     );
   }
 
+  // Redirect to onboarding if jigolo has no profile
+  if (isJigolo && companionData === null) {
+    return (
+      <div className="min-h-[70vh] flex flex-col items-center justify-center space-y-6">
+        <div className="w-20 h-20 bg-brandPurple/20 rounded-full flex items-center justify-center text-brandPurple mb-2">
+          <Star size={40} />
+        </div>
+        <h2 className="text-2xl font-bold text-white">Complete Your Profile</h2>
+        <p className="text-slate-400 max-w-md text-center">
+          You need to set up your profile before you can access the dashboard and start receiving bookings.
+        </p>
+        <Link to="/onboarding">
+          <Button variant="primary" size="lg" className="mt-4 text-white">
+            Set Up Profile Now
+          </Button>
+        </Link>
+      </div>
+    );
+  }
+
   if (isJigolo) {
     const companion = companionData || {};
     const stats = {

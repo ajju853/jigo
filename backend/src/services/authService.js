@@ -6,7 +6,30 @@ const { sendMail } = require('./emailService');
 
 class AuthService {
   async register(data) {
-    const { email, password, name, role, phone, location, profilePhoto } = data;
+    const { email, password, name, role, phone, location, profilePhoto, dateOfBirth, gender } = data;
+
+    if (!dateOfBirth || !gender) {
+      const err = new Error('Date of birth and gender are required for registration.');
+      err.statusCode = 400;
+      err.error = 'Registration Error';
+      throw err;
+    }
+
+    // Age validation
+    const dob = new Date(dateOfBirth);
+    const today = new Date();
+    let age = today.getFullYear() - dob.getFullYear();
+    const monthDiff = today.getMonth() - dob.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+      age--;
+    }
+
+    if (age < 18) {
+      const err = new Error('You must be at least 18 years old to register.');
+      err.statusCode = 400;
+      err.error = 'Age Restriction';
+      throw err;
+    }
 
     const existingUser = await prisma.user.findUnique({
       where: { email: email.toLowerCase() }
@@ -33,7 +56,9 @@ class AuthService {
           profilePhoto: profilePhoto || (role === 'customer'
             ? "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200"
             : "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200"),
-          isVerified: role === 'customer'
+          isVerified: role === 'customer',
+          dateOfBirth: new Date(dateOfBirth),
+          gender: gender
         }
       });
 

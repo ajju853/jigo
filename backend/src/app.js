@@ -20,6 +20,9 @@ const disputeRoutes = require('./routes/disputeRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 const feeRoutes = require('./routes/feeRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
+const onboardingRoutes = require('./routes/onboardingRoutes');
+const searchRoutes = require('./routes/searchRoutes');
+const legalRoutes = require('./routes/legalRoutes');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -66,6 +69,9 @@ app.use('/api/disputes', disputeRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/fees', feeRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/onboarding', onboardingRoutes);
+app.use('/api/search', searchRoutes);
+app.use('/api/legal', legalRoutes);
 
 // Root health check endpoint
 app.get('/api/health', (req, res) => {

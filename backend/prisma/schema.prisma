@@ -24,7 +24,45 @@ model User {
   passwordResetToken String? @unique @map("password_reset_token") @db.VarChar(255)
   passwordResetExpires DateTime? @map("password_reset_expires")
 
+  accountStatus     AccountStatus @default(pending) @map("account_status")
+  bannerPhoto       String?   @map("banner_photo") @db.VarChar(500)
+  lat               Decimal?  @db.Decimal(10,8)
+  lng               Decimal?  @db.Decimal(11,8)
+  dateOfBirth       DateTime? @map("date_of_birth") @db.Date
+  gender            String?   @db.VarChar(20)
+  bio               String?   @db.Text
+  about             String?   @db.Text
+  interests         String[]  @default([])
+  languages         String[]  @default([])
+  verificationLevel VerificationLevel @default(unverified) @map("verification_level")
+  verifiedAt        DateTime? @map("verified_at")
+  isBanned          Boolean   @default(false) @map("is_banned")
+  banReason         String?   @map("ban_reason") @db.Text
+  banExpiresAt      DateTime? @map("ban_expires_at")
+  isOnline          Boolean   @default(false) @map("is_online")
+  lastOnlineAt      DateTime? @map("last_online_at")
+  lastSeenAt        DateTime? @map("last_seen_at")
+  onboardingStep    Int       @default(0) @map("onboarding_step")
+  onboardingCompleted Boolean @default(false) @map("onboarding_completed")
+
   profile         Profile?
+  userPreferences   UserPreference?
+  profileViews      ProfileView[]
+  profileInteractions ProfileInteraction[]
+  searchHistory     SearchHistory[]
+  savedSearches     SavedSearch[]
+  recentlyViewed    RecentlyViewed[]
+  userAnalytics     UserAnalytics[]
+  
+  onboardingTracking OnboardingTracking[]
+  welcomeExperiences WelcomeExperience[]
+  userSessions       UserSession[]
+  // loyaltyPoints LoyaltyPoint[] (removed due to conflict)
+  userFeedbacks      UserFeedback[]
+  policyAcceptances  UserPolicyAcceptance[]
+  referralsMadeTracking      ReferralTracking[] @relation("referralsMadeTracking")
+  referralsReceivedTracking  ReferralTracking[] @relation("referralsReceivedTracking")
+
   bookingsAsCustomer Booking[] @relation("customerBookings")
   bookingsAsJigolo  Booking[] @relation("jigoloBookings")
   sentMessages    Message[] @relation("sentMessages")
@@ -86,7 +124,43 @@ model Profile {
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
   
+  title         String?   @db.VarChar(100)
+  headline      String?   @db.VarChar(200)
+  about         String?   @db.Text
+  ethnicity     String?   @db.VarChar(50)
+  height        Int?
+  weight        Int?
+  bodyType      String?   @map("body_type") @db.VarChar(50)
+  eyeColor      String?   @map("eye_color") @db.VarChar(30)
+  hairColor     String?   @map("hair_color") @db.VarChar(30)
+  experienceYears Int?    @map("experience_years")
+  certifications String[] @default([])
+  education     String?   @db.Text
+  previousExperience String? @map("previous_experience") @db.Text
+  packages      Json?     @db.JsonB
+  extras        Json?     @db.JsonB
+  completionRate Decimal  @default(100) @map("completion_rate") @db.Decimal(5,2)
+  responseTime  Int?      @map("response_time")
+  responseRate  Decimal   @default(100) @map("response_rate") @db.Decimal(5,2)
+  profileStatus ProfileStatus @default(draft) @map("profile_status")
+  verificationLevel VerificationLevel @default(unverified) @map("verification_level")
+  isFeatured    Boolean   @default(false) @map("is_featured")
+  featuredUntil DateTime? @map("featured_until")
+  videoUrl      String?   @map("video_url") @db.VarChar(500)
+  gallery       Json?     @db.JsonB
+  socialLinks   Json?     @map("social_links") @db.JsonB
+  website       String?   @db.VarChar(255)
+  timezone      String?   @db.VarChar(50)
+  workHours     Json?     @map("work_hours") @db.JsonB
+  autoConfirm   Boolean   @default(false) @map("auto_confirm")
+  advanceBookingMin Int   @default(2) @map("advance_booking_min")
+  advanceBookingMax Int   @default(14) @map("advance_booking_max")
+  cancellationPolicy String @default("flexible") @map("cancellation_policy") @db.VarChar(50)
+  
   user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  viewsRelation        ProfileView[]
+  interactionsRelation ProfileInteraction[]
+  recentlyViewed       RecentlyViewed[]
   bookings      Booking[]
   favorites     Favorite[]
   matchingScores MatchingScore[]
@@ -540,6 +614,11 @@ model UserActivityLog {
   createdAt DateTime @default(now()) @map("created_at")
 
   user      User     @relation(fields: [userId], references: [id])
+  entityType  String?   @map("entity_type") @db.VarChar(50)
+  entityId    String?   @map("entity_id") @db.Uuid
+  ipAddress   String?   @map("ip_address") @db.VarChar(45)
+  userAgent   String?   @map("user_agent") @db.Text
+  metadata    Json?     @db.JsonB
 
   @@map("user_activity_logs")
 }
@@ -734,4 +813,292 @@ model FeeHistory {
   changedByUser User?  @relation(fields: [changedBy], references: [id])
 
   @@map("fee_history")
+}
+
+// =============================================
+// NEW MODELS FOR USER PROFILE & ACTIVITY SYSTEM
+// =============================================
+
+enum AccountStatus {
+  pending
+  active
+  suspended
+  banned
+  deleted
+}
+
+enum ProfileStatus {
+  draft
+  pending_review
+  published
+  hidden
+}
+
+enum VerificationLevel {
+  unverified
+  basic
+  verified
+  premium
+}
+
+model UserPreference {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId              String   @unique @map("user_id") @db.Uuid
+  searchRadius        Int      @default(50) @map("search_radius")
+  preferredGenders    String[] @map("preferred_genders")
+  preferredAges       Json?    @map("preferred_ages") @db.JsonB
+  preferredLanguages  String[] @map("preferred_languages")
+  preferredTags       String[] @map("preferred_tags")
+  budgetMin           Decimal? @map("budget_min") @db.Decimal(10,2)
+  budgetMax           Decimal? @map("budget_max") @db.Decimal(10,2)
+  emailNotifications  Json?    @map("email_notifications") @db.JsonB
+  pushNotifications   Json?    @map("push_notifications") @db.JsonB
+  smsNotifications    Json?    @map("sms_notifications") @db.JsonB
+  showEmail           Boolean  @default(false) @map("show_email")
+  showPhone           Boolean  @default(false) @map("show_phone")
+  showLocation        Boolean  @default(true) @map("show_location")
+  showOnlineStatus    Boolean  @default(true) @map("show_online_status")
+  discoveryEnabled    Boolean  @default(true) @map("discovery_enabled")
+  allowMessages       Boolean  @default(true) @map("allow_messages")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_preferences")
+}
+
+model ProfileView {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  profileId       String   @map("profile_id") @db.Uuid
+  viewerId        String?  @map("viewer_id") @db.Uuid
+  viewerIp        String?  @map("viewer_ip") @db.VarChar(45)
+  viewerLocation  Json?    @map("viewer_location") @db.JsonB
+  viewerDevice    String?  @map("viewer_device") @db.Text
+  viewedAt        DateTime @default(now()) @map("viewed_at")
+  sessionId       String?  @map("session_id") @db.Uuid
+  source          String?  @db.VarChar(50)
+  referrer        String?  @db.VarChar(500)
+  viewDuration    Int?     @map("view_duration")
+  isFirstView     Boolean  @default(false) @map("is_first_view")
+
+  profile         Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  viewer          User?    @relation(fields: [viewerId], references: [id], onDelete: SetNull)
+
+  @@index([profileId])
+  @@index([viewerId])
+  @@index([viewedAt(sort: Desc)])
+  @@map("profile_views")
+}
+
+model ProfileInteraction {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  profileId           String   @map("profile_id") @db.Uuid
+  userId              String   @map("user_id") @db.Uuid
+  interactionType     String   @map("interaction_type") @db.VarChar(50)
+  interactionDetails  Json?    @map("interaction_details") @db.JsonB
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  profile             Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, userId, interactionType])
+  @@map("profile_interactions")
+}
+
+model SearchHistory {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  searchQuery   String?  @map("search_query") @db.VarChar(255)
+  filters       Json?    @db.JsonB
+  resultsCount  Int?     @map("results_count")
+  searchSource  String?  @map("search_source") @db.VarChar(50)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("search_history")
+}
+
+model SavedSearch {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String   @map("user_id") @db.Uuid
+  name            String?  @db.VarChar(100)
+  filters         Json?    @db.JsonB
+  notifyOnNew     Boolean  @default(false) @map("notify_on_new")
+  lastNotifiedAt  DateTime? @map("last_notified_at")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("saved_searches")
+}
+
+model RecentlyViewed {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String   @map("user_id") @db.Uuid
+  profileId       String   @map("profile_id") @db.Uuid
+  viewedAt        DateTime @default(now()) @map("viewed_at")
+  viewCount       Int      @default(1) @map("view_count")
+  lastViewedAt    DateTime @default(now()) @map("last_viewed_at")
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profile         Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, profileId])
+  @@index([userId])
+  @@map("recently_viewed")
+}
+
+model UserAnalytics {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId              String   @map("user_id") @db.Uuid
+  date                DateTime @db.Date
+  
+  // Search Activity
+  searchesCount       Int      @default(0) @map("searches_count")
+  uniqueSearches      Int      @default(0) @map("unique_searches")
+  
+  // View Activity
+  profileViews        Int      @default(0) @map("profile_views")
+  uniqueProfilesViewed Int     @default(0) @map("unique_profiles_viewed")
+  totalViewDuration   Int      @default(0) @map("total_view_duration")
+  
+  // Interaction Activity
+  profileLikes        Int      @default(0) @map("profile_likes")
+  savesMade           Int      @default(0) @map("saves_made")
+  sharesMade          Int      @default(0) @map("shares_made")
+  messagesSent        Int      @default(0) @map("messages_sent")
+  messagesReceived    Int      @default(0) @map("messages_received")
+  
+  // Bookings / Reviews
+  bookingsMade        Int      @default(0) @map("bookings_made")
+  bookingsReceived    Int      @default(0) @map("bookings_received")
+  reviewsWritten      Int      @default(0) @map("reviews_written")
+  reviewsReceived     Int      @default(0) @map("reviews_received")
+  
+  // Engagement Score
+  engagementScore     Decimal  @default(0) @map("engagement_score") @db.Decimal(5,2)
+  activityScore       Decimal  @default(0) @map("activity_score") @db.Decimal(5,2)
+  socialScore         Decimal  @default(0) @map("social_score") @db.Decimal(5,2)
+  
+  // Time Spent
+  timeSpentMinutes    Int      @default(0) @map("time_spent_minutes")
+  sessionsCount       Int      @default(0) @map("sessions_count")
+  
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@index([date])
+  @@map("user_analytics")
+}
+
+
+
+// =============================================
+// NEW MODELS FOR 5-STAGE USER JOURNEY
+// =============================================
+
+model OnboardingTracking {
+  id                  String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId              String   @map("user_id") @db.Uuid
+  stepNumber          Int      @map("step_number")
+  stepName            String   @map("step_name") @db.VarChar(50)
+  stepStatus          String   @default("pending") @map("step_status") @db.VarChar(20)
+  completedAt         DateTime? @map("completed_at")
+  timeSpentSeconds    Int?     @map("time_spent_seconds")
+  metadata            Json?    @db.JsonB
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("onboarding_tracking")
+}
+
+model WelcomeExperience {
+  id                     String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId                 String   @map("user_id") @db.Uuid
+  welcomedAt             DateTime? @map("welcomed_at")
+  emailSent              Boolean  @default(false) @map("email_sent")
+  emailOpened            Boolean  @default(false) @map("email_opened")
+  pushNotificationSent   Boolean  @default(false) @map("push_notification_sent")
+  pushNotificationOpened Boolean  @default(false) @map("push_notification_opened")
+  welcomeVideoWatched    Boolean  @default(false) @map("welcome_video_watched")
+  onboardingTipsShown    Int      @default(0) @map("onboarding_tips_shown")
+  createdAt              DateTime @default(now()) @map("created_at")
+
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("welcome_experience")
+}
+
+model UserSession {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId           String   @map("user_id") @db.Uuid
+  sessionToken     String   @unique @map("session_token") @db.VarChar(255)
+  ipAddress        String?  @map("ip_address") @db.VarChar(45)
+  userAgent        String?  @map("user_agent") @db.Text
+  deviceType       String?  @map("device_type") @db.VarChar(50)
+  startTime        DateTime @default(now()) @map("start_time")
+  endTime          DateTime? @map("end_time")
+  durationSeconds  Int?     @map("duration_seconds")
+  isActive         Boolean  @default(true) @map("is_active")
+
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isActive])
+  @@map("user_sessions")
+}
+
+
+model UserFeedback {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId           String   @map("user_id") @db.Uuid
+  feedbackType     String   @map("feedback_type") @db.VarChar(50)
+  rating           Int?     
+  comment          String?  @db.Text
+  metadata         Json?    @db.JsonB
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_feedback")
+}
+
+model ReferralTracking {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  referrerId       String   @map("referrer_id") @db.Uuid
+  refereeId        String   @map("referee_id") @db.Uuid
+  referralCode     String?  @map("referral_code") @db.VarChar(50)
+  status           String   @default("pending") @db.VarChar(20)
+  rewardAmount     Decimal? @map("reward_amount") @db.Decimal(10,2)
+  rewardClaimed    Boolean  @default(false) @map("reward_claimed")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  referrer         User     @relation("referralsMadeTracking", fields: [referrerId], references: [id], onDelete: Cascade)
+  referee          User     @relation("referralsReceivedTracking", fields: [refereeId], references: [id], onDelete: Cascade)
+
+  @@map("referral_tracking")
+}
+
+model UserPolicyAcceptance {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  documentType String   @map("document_type") @db.VarChar(50)
+  version      String   @db.VarChar(20)
+  acceptedAt   DateTime @default(now()) @map("accepted_at")
+
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, documentType, version])
+  @@map("user_policy_acceptances")
 }

@@ -3,17 +3,20 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/layout/Navbar';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 import { ToastContainer } from './components/ui/Toast';
+import Footer from './components/layout/Footer';
 
 // Pages
+import LegalPages from './pages/Legal/PolicyPage';
 import LandingPage from './pages/LandingPage';
-import LoginPage from './pages/LoginPage';
-import SignupPage from './pages/SignupPage';
+import AuthFlow from './pages/AuthFlow';
+import SearchPage from './pages/SearchPage';
 import Dashboard from './pages/Dashboard';
 import BrowsePage from './pages/BrowsePage';
 import ProfilePage from './pages/ProfilePage';
 import BookingFlow from './pages/BookingFlow';
 import ChatPage from './pages/ChatPage';
 import SettingsPage from './pages/SettingsPage';
+import ProfileSetupWizard from './pages/ProfileSetupWizard';
 
 function App() {
   return (
@@ -30,10 +33,18 @@ function App() {
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<LandingPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/signup" element={<SignupPage />} />
+            <Route path="/auth" element={<AuthFlow />} />
+            <Route path="/login" element={<AuthFlow />} />
+            <Route path="/signup" element={<AuthFlow />} />
+            <Route path="/search" element={<SearchPage />} />
             <Route path="/browse" element={<BrowsePage />} />
             <Route path="/profile/:id" element={<ProfilePage />} />
+            
+            {/* Legal Routes */}
+            <Route path="/legal/:page" element={<LegalPages />} />
+            <Route path="/privacy" element={<LegalPages />} />
+            <Route path="/terms" element={<LegalPages />} />
+            <Route path="/safety" element={<LegalPages />} />
 
             {/* Protected Routes */}
             <Route 
@@ -41,6 +52,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Dashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/onboarding" 
+              element={
+                <ProtectedRoute allowedRoles={['jigolo']}>
+                  <ProfileSetupWizard />
                 </ProtectedRoute>
               } 
             />
@@ -73,6 +92,9 @@ function App() {
             <Route path="*" element={<LandingPage />} />
           </Routes>
         </div>
+        
+        {/* Footer Area */}
+        <Footer />
       </div>
     </Router>
   );

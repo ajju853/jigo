@@ -23,7 +23,9 @@ export const SignupForm = () => {
       email: '',
       password: '',
       confirmPassword: '',
-      role: 'customer', // 'customer' or 'jigolo'
+      role: 'customer',
+      dateOfBirth: '',
+      gender: '',
       terms: false
     }
   });
@@ -46,13 +48,27 @@ export const SignupForm = () => {
     setPasswordStrength(strength);
   };
 
+  const validateAge = (dob) => {
+    if (!dob) return false;
+    const date = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - date.getFullYear();
+    const monthDiff = today.getMonth() - date.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < date.getDate())) {
+      age--;
+    }
+    return age >= 18 || 'You must be at least 18 years old to register.';
+  };
+
   const onSubmit = async (data) => {
     try {
       const user = await registerUser({
         name: data.name,
         email: data.email,
         password: data.password,
-        role: data.role
+        role: data.role,
+        dateOfBirth: data.dateOfBirth,
+        gender: data.gender
       });
       addToast(`Account created successfully! Welcome, ${user.name}.`, 'success');
       navigate('/dashboard');
@@ -120,6 +136,36 @@ export const SignupForm = () => {
           }
         })}
       />
+
+      <div className="grid grid-cols-2 gap-4">
+        <Input
+          label="Date of Birth"
+          type="date"
+          error={errors.dateOfBirth?.message}
+          {...register('dateOfBirth', {
+            required: 'Date of birth is required',
+            validate: validateAge
+          })}
+        />
+        
+        <div>
+          <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wide mb-2">
+            Gender
+          </label>
+          <select
+            className={`w-full bg-white/5 border ${errors.gender ? 'border-rose-500' : 'border-white/10'} rounded-lg p-2.5 text-sm text-white focus:border-brandPurple outline-none transition`}
+            {...register('gender', { required: 'Gender is required' })}
+          >
+            <option value="" disabled className="text-gray-500">Select Gender</option>
+            <option value="Male" className="bg-darkBg text-white">Male</option>
+            <option value="Female" className="bg-darkBg text-white">Female</option>
+            <option value="Non-Binary" className="bg-darkBg text-white">Non-Binary</option>
+            <option value="Other" className="bg-darkBg text-white">Other</option>
+            <option value="Prefer not to say" className="bg-darkBg text-white">Prefer not to say</option>
+          </select>
+          {errors.gender && <p className="text-rose-400 text-[10px] font-semibold mt-1">{errors.gender.message}</p>}
+        </div>
+      </div>
 
       <div>
         <Input
