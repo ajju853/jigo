@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ShieldCheck, CalendarCheck2, Clock, Heart, Users2, Sparkles, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
-import Footer from '../components/layout/Footer';
+
 
 const FEATURES = [
   {
@@ -242,9 +242,6 @@ export const LandingPage = () => {
 
         </div>
       </section>
-
-      {/* Footer */}
-      <Footer />
       
     </div>
   );
