@@ -89,12 +89,11 @@ export const BookingForm = ({ profile, onComplete }) => {
         try {
           const values = watch();
           await createBooking({
-            jigoloId: profile.userId,
             profileId: profile.id,
             date: selectedDate,
-            startTime: selectedTime,
-            endTime: selectedTime,
-            package: selectedPackage?.name,
+            time: selectedTime,
+            packageId: selectedPackage?.id || selectedPackage?.name,
+            duration: selectedPackage?.duration || 1,
             totalPrice: selectedPackage?.price,
             specialRequests: values.specialRequests,
           });
@@ -272,12 +271,11 @@ export const BookingForm = ({ profile, onComplete }) => {
                   <Button onClick={async () => {
                     try {
                       await createBooking({
-                        jigoloId: profile.userId,
                         profileId: profile.id,
                         date: selectedDate,
-                        startTime: selectedTime,
-                        endTime: selectedTime,
-                        package: selectedPackage?.name,
+                        time: selectedTime,
+                        packageId: selectedPackage?.id || selectedPackage?.name,
+                        duration: selectedPackage?.duration || 1,
                         totalPrice: selectedPackage?.price,
                         specialRequests: watch('specialRequests'),
                       });
