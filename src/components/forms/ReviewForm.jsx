@@ -5,9 +5,11 @@ import RatingStars from '../ui/RatingStars';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
 import useToastStore from '../../stores/toastStore';
+import useAuthStore from '../../stores/authStore';
 
 export const ReviewForm = ({ profileId, bookingId, onComplete }) => {
   const { addToast } = useToastStore();
+  const { token } = useAuthStore();
   const [rating, setRating] = useState(5);
 
   const {
@@ -26,13 +28,18 @@ export const ReviewForm = ({ profileId, bookingId, onComplete }) => {
 
   const onSubmit = async (data) => {
     try {
+      if (!token) {
+        addToast("You must be logged in to submit a review.", "warning");
+        return;
+      }
+      
       await reviewAPI.create({
         bookingId,
         profileId,
         rating,
         comment: data.text,
         isAnonymous: data.anonymous,
-      });
+      }, token);
       addToast("Review submitted successfully!", "success");
       reset();
       setRating(5);
