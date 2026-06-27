@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+node_modules_old/
+node_modules_old3/
+node_modules_old4/
+node_modules_corrupted/
+node_modules_hoisted/
+node_modules_v3/
+
+# Build output
+dist/
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+npm_err.txt
+npm_out.txt
+server.log
+server.err
+pnpm-debug.log*
+
+# Lock files (keep package-lock.json only)
+pnpm-lock.yaml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Temp
+tmp_empty/
+empty_temp/
+run_tests.js
+
+# Uploads (user content)
+backend/uploads/*
+!backend/uploads/.gitkeep
