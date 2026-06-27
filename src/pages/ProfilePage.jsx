@@ -85,7 +85,7 @@ export const ProfilePage = () => {
         : favorites.filter(fid => fid !== profileData.id);
       setFavorites(updated);
       localStorage.setItem('jigo_favorites', JSON.stringify(updated));
-      addToast(isFav ? `${profileData.name} added to favorites!` : `${profileData.name} removed from favorites.`, isFav ? 'success' : 'info');
+      addToast(isFav ? `${profileData.user?.name} added to favorites!` : `${profileData.user?.name} removed from favorites.`, isFav ? 'success' : 'info');
     } catch (err) {
       addToast(err.message || 'Failed to update favorite', 'error');
     }
@@ -104,7 +104,7 @@ export const ProfilePage = () => {
       navigate('/login');
       return;
     }
-    addToast(`Initiating chat with ${profileData.name}...`, "success");
+    addToast(`Initiating chat with ${profileData.user?.name}...`, "success");
     setTimeout(() => navigate('/messages'), 1000);
   };
 
@@ -138,7 +138,7 @@ export const ProfilePage = () => {
           <div className="aspect-[4/5] rounded-3xl overflow-hidden border border-white/10 shadow-glass-shadow bg-white/5">
             <img
               src={(profileData.images || [])[activeImageIdx] || 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=600'}
-              alt={profileData.name}
+              alt={profileData.user?.name || 'Profile'}
               className="w-full h-full object-cover"
             />
           </div>
@@ -163,7 +163,7 @@ export const ProfilePage = () => {
           <div className="space-y-3">
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-3xl sm:text-4xl font-heading font-extrabold text-white flex items-center gap-2">
-                {profileData.name}, {profileData.age}
+                {profileData.user?.name}, {profileData.age}
                 {profileData.verified && <ShieldCheck className="w-6 h-6 text-emerald-400 fill-emerald-500/10" />}
               </h1>
               {(profileData.tags || []).map(t => (
@@ -274,7 +274,7 @@ export const ProfilePage = () => {
         </div>
       </div>
 
-      <Modal isOpen={isBookingOpen} onClose={() => setIsBookingOpen(false)} title={`Book ${profileData.name}`} size="md">
+      <Modal isOpen={isBookingOpen} onClose={() => setIsBookingOpen(false)} title={`Book ${profileData.user?.name}`} size="md">
         <BookingForm profile={profileData} onComplete={() => { setIsBookingOpen(false); navigate('/dashboard'); }} />
       </Modal>
 
